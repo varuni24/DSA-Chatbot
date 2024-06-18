@@ -5,7 +5,7 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 import os
 
-def initialize_chatbot(api_key):
+def startChatbot(api_key):
     os.environ["OPENAI_API_KEY"] = api_key
     embeddings = OpenAIEmbeddings(openai_api_key=api_key)
     db = Chroma(embedding_function=embeddings)
@@ -54,7 +54,7 @@ def initialize_chatbot(api_key):
     return add_text, bot
 
 
-def start_chatbot():
+def startInterface():
     with gr.Blocks() as trial:
         api_key_input = gr.Textbox(label="Enter API Key", type="password")
         submit_button = gr.Button("Submit")
@@ -65,27 +65,24 @@ def start_chatbot():
 
         state = gr.State()
 
-        def add_text_fn(history, text):
+        def add_text_helper(history, text):
             add_text, _ = state.value
             return add_text(history, text)
 
-        def bot_fn(history):
+        def bot_helper(history):
             _, bot = state.value
             return bot(history)
 
         def setup_chatbot(api_key):
-            add_text, bot = initialize_chatbot(api_key)
+            add_text, bot = startChatbot(api_key)
             state.value = (add_text, bot)
             return gr.update(visible=True), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)
 
-        submit_button.click(
-            setup_chatbot,
-            inputs=[api_key_input],
-            outputs=[chatbot, txt, submitButton, clearButton]
-        )
-        txt.submit(add_text_fn, [chatbot, txt], [chatbot, txt]).then(bot_fn, chatbot, chatbot)
-        submitButton.click(add_text_fn, [chatbot, txt], [chatbot, txt]).then(bot_fn, chatbot, chatbot)
+        submit_button.click(setup_chatbot, inputs=[api_key_input], outputs=[chatbot, txt, submitButton, clearButton])
+        txt.submit(add_text_helper, [chatbot, txt], [chatbot, txt]).then(bot_helper, chatbot, chatbot)
+        submitButton.click(add_text_helper, [chatbot, txt], [chatbot, txt]).then(bot_helper, chatbot, chatbot)
         clearButton.click(lambda: None, None, chatbot, queue=False)
+
     trial.launch()
 
-start_chatbot()
+startInterface()
